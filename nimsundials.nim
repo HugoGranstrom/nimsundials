@@ -189,7 +189,14 @@ proc `*`*(c: realtype, v: NVectorType): NVectorType =
 
 template CVodeProc*(name, body: untyped): untyped {.dirty.} =
     proc `name`(t: realtype, y_raw: N_Vector, ydot_raw: N_Vector, user_data: pointer): cint {.cdecl.} =
-        discard
+        let y = newNVector(y_raw)
+        var ydot = newNVector(ydot_raw)
+        body
+        NV_DATA_S(ydot_raw) = NV_DATA_S(ydot.rawVector[])
+    proc `name`(t: realtype, y: NVectorType): NVectorType =
+        var ydot = newNVector(y.length)
+        body
+        result = ydot
 
 
 echo "\n\n\n\nLet the real testing begin:"
