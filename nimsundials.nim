@@ -108,6 +108,11 @@ proc `[]`*(v: NVectorType, i: int): realtype =
         raise newException(ValueError, "index i is out of range. `[]`")
     NV_Ith_S(v.rawVector[], i)
 
+proc `[]=`*(v: NVectorType, i: int, c: realtype) =
+    if v.length <= i:
+        raise newException(ValueError, "index i is out of range. `[]`")
+    NV_Ith_S(v.rawVector[], i) = c
+
 proc `$`*(v: NVectorType): string =
     result = "NVector("
     for i in 0 ..< v.length:
