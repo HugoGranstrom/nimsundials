@@ -98,6 +98,11 @@ proc newNVector*(arr: openArray[realtype]): NVectorType =
     for i in 0 ..< result.length:
         NV_Ith_S(result.rawVector[], i) = arr[i]
 
+proc clone*(v: NVectorType): NVectorType =
+    result = newNVector(v.length)
+    N_VScale_Serial(1.0, v.rawVector[], result.rawVector[])
+
+
 proc `[]`*(v: NVectorType, i: int): realtype =
     if v.length <= i:
         raise newException(ValueError, "index i is out of range. `[]`")
