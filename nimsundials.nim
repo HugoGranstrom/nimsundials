@@ -263,4 +263,19 @@ CVodeFree(addr(cvode_mem))
 flag = SUNLinSolFree(LS)
 SUNMatDestroy(A)
 
+# tout should be openArray[realtype]
+proc CVodeSolve*(f: proc(t: realtype, y_raw: N_Vector, ydot_raw: N_Vector, user_data: pointer): cint {.cdecl.}, y0: NVectorType, t0, tout: realtype, abstol = 1e-8, reltol = 1e-8): NVectorType =
+    var cvode_mem = CVodeCreate(CV_ADAMS)
+    var A: SUNMatrix = nil #SUNDenseMatrix(neqs, neqs)
+    var flag = CVodeInit(cvode_mem, f, t0, y0.rawVector[])
+    flag = CVodeSStolerances(cvode_mem, reltol, abstol)
+    var LS = SUNLinSol_SPGMR(y0.rawVector[], 0, 0)
+    flag = CVodeSetLinearSolver(cvode_mem, LS, A)
+    var t = 0.0
+    var y = newNVector(y0.length)
+    flag = CVode(cvode_mem, tout, y.rawVector[], addr(t), CV_NORMAL)
+    CVodeFree(addr(cvode_mem))
+    flag = SUNLinSolFree(LS)
+    SUNMATDestroy(A)
+    result = y
 
