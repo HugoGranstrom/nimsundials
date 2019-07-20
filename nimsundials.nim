@@ -98,6 +98,10 @@ proc newNVector*(arr: openArray[realtype]): NVectorType =
     for i in 0 ..< result.length:
         NV_Ith_S(result.rawVector[], i) = arr[i]
 
+proc newNVector*(v: N_Vector): NVectorType =
+    result = newNVector(NV_LENGTH_S(v).int)
+    N_VScale_Serial(1.0, v, result.rawVector[])
+
 proc clone*(v: NVectorType): NVectorType =
     result = newNVector(v.length)
     N_VScale_Serial(1.0, v.rawVector[], result.rawVector[])
@@ -119,6 +123,9 @@ proc `$`*(v: NVectorType): string =
         result = result & $v[i] & ", "
     result = result & ")"
 
+proc `@`*(v: NVectorType): seq[realtype] =
+    for i in 0 ..< v.length:
+        result.add(v[i])
 
 proc `==`*(a, b: NVectorType): bool =
     let length = a.length
@@ -218,31 +225,39 @@ echo v2[2]
 echo -1.0 * v2
 
 
-proc f(t: realtype, y: N_Vector, ydot: N_Vector, user_data: pointer): cint {.cdecl.} =
-    NV_Ith_S(ydot, 0) = NV_Ith_S(y, 0)
-    NV_Ith_S(ydot, 1) = NV_Ith_S(y, 1)
-    NV_Ith_S(ydot, 2) = NV_Ith_S(y, 2)
+proc f(t: realtype, y_raw: N_Vector, ydot_raw: N_Vector, user_data: pointer): cint {.cdecl.} =
+    let y = newNVector(y_raw)
+    var ydot = newNVector(ydot_raw)
+    ydot = clone(y)
+    NV_DATA_S(ydot_raw) = NV_DATA_S(ydot.rawVector[])
+    #NV_Ith_S(ydot_raw, 0) = NV_Ith_S(y_raw, 0)
+    #NV_Ith_S(ydot_raw, 1) = NV_Ith_S(y_raw, 1)
+    #NV_Ith_S(ydot_raw, 2) = NV_Ith_S(y_raw, 2)
+
+CVodeProc f2:
+    ydot = 1/(t+1) * clone(y)
 
 var cvode_mem: pointer = nil
 cvode_mem = CVodeCreate(CV_ADAMS)
 var t0 = 0.0
 var y0 = newNVector([1.0, 1.0, 1.0])
-var A = SUNDenseMatrix(3, 3)
+var A: SUNMatrix = nil#SUNDenseMatrix(3, 3)
 let reltol = 1e-8
 let abstol = 1e-8
-var flag = CVodeInit(cvode_mem, f, t0, y0.rawVector[])
+var flag = CVodeInit(cvode_mem, f2, t0, y0.rawVector[])
 flag = CVodeSStolerances(cvode_mem, reltol, abstol)
 var LS = SUNLinSol_SPGMR(y0.rawVector[], 0, 0)
 flag = CVodeSetLinearSolver(cvode_mem, LS, A)
 var t: realtype = 0.0
-var tout = 1.0
+var tout = 10.0
 flag = CVode(cvode_mem, tout, y0.rawVector[], addr(t), CV_NORMAL)
 
 import math
 var correct = newNVector(@[exp(1.0), exp(1.0), exp(1.0)])
-echo y0
+echo "Answer", y0
 echo "Error: ", correct - y0
-
+echo "f2: ", f2(10.0, y0)
+echo "Seq: ", @y0
 CVodeFree(addr(cvode_mem))
 flag = SUNLinSolFree(LS)
 SUNMatDestroy(A)
