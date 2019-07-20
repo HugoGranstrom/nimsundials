@@ -23,5 +23,24 @@ CVodeProc f2:
 ```
 `ydot` is the result variable that you should assign `y'` to. `ydot`, `y`, `t` are implicitly defined. `ydot` and `y` are `NVectorType` and `t` is `realtype`. Do __not__ use `result`.
 
+# How to solve an ODE
+To solve a ODE you need:
+- `t0` - start time
+- `y0` - initial conditions
+- `f` - the ODE function
+- `tout` - the time you want to solve for.
+
+To solve the ODE call `CVodeSolve`:
+```nim
+var t0 = 0.0
+var y0 = newNVector([1.0, 2.0, 3.0])
+var tout = 2.0
+var reltol = 1e-5
+var abstol = 1e-5
+CVodeProc f:
+  ydot = 2.0 * y # y' = 2y
+var yout = CVodeSolve(f, y0, t0, tout, abstol, reltol)
+```
+
 # Contributions
 are happily welcomed :-)
