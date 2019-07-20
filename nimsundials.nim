@@ -235,7 +235,8 @@ proc f(t: realtype, y_raw: N_Vector, ydot_raw: N_Vector, user_data: pointer): ci
     #NV_Ith_S(ydot_raw, 2) = NV_Ith_S(y_raw, 2)
 
 CVodeProc f2:
-    ydot = 1/(t+1) * clone(y)
+    #ydot = 1/(t+1) * y
+    ydot = y
 
 var cvode_mem: pointer = nil
 cvode_mem = CVodeCreate(CV_ADAMS)
@@ -249,7 +250,7 @@ flag = CVodeSStolerances(cvode_mem, reltol, abstol)
 var LS = SUNLinSol_SPGMR(y0.rawVector[], 0, 0)
 flag = CVodeSetLinearSolver(cvode_mem, LS, A)
 var t: realtype = 0.0
-var tout = 10.0
+var tout = 1.0
 flag = CVode(cvode_mem, tout, y0.rawVector[], addr(t), CV_NORMAL)
 
 import math
